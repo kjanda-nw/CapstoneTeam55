@@ -1,7 +1,6 @@
 #This file does work for EDA, examining missing data etcetera
 
 #set working directory
-setwd("~/Documents/MSDS498/CapstoneTeam55")
 
 #list of needed libraries
 #install.packages("fBasics")
@@ -47,8 +46,8 @@ for (c in countries) {
 #write.csv(miss_by_country,"../ForecastData/summary_by_country.csv")
 
 #merge on metadata
-meta <- read.csv("../ForecastData/Predictive_model_TABLE_FOR_PRED_MODEL_FILTERS_Metadata_Country_API_AG.LND.FRST.K2_DS2_en_csv_v2_989381.csv")
-
+meta <- read.csv("Predictive_model_TABLE_FOR_PRED_MODEL_FILTERS_Metadata_Country_API_AG.LND.FRST.K2_DS2_en_csv_v2_989381.csv")
+colnames(meta)[1] <- "Country.Code"
 meta <- meta[ ,c("Country.Code","IncomeGroup")]
 df2 <- merge(df,meta,by="Country.Code")
 
@@ -123,6 +122,14 @@ reduced_Data = df6[,-c(hc)]
 keep_names <- names(reduced_Data)
 keep_names <- c(keep_names,"countryname","Area","IncomeGroup","Country.Code")
 
-time <- ts(df4)
+time <- df4[ ,nums]
 library(imputeTS)
-time2 <- na.interpolation(time)
+char <- df4[ , names(df4) %in% c("countryname","Area","IncomeGroup","Country.Code","yr")]
+for (i in 2:ncol(time)) {
+  n <- ts(df4[ ,i])
+  b <- na_interpolation(n)
+  c <- as.data.frame(b)
+  char <- cbind(char,c)
+  names(char)[i+4] <- names(time)[i-1]
+}
+write.csv(char,"country_pred_data_v2.csv")
