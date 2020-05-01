@@ -200,5 +200,3 @@ write.csv(out4, file="country_pred_data.csv")
 write.csv(only_step3, file="extra_targets.csv")
 write.csv(full_dict, file="Data_dictionary.csv")
 
-df <- read.csv("country_pred_data.csv")
-summary(df)
