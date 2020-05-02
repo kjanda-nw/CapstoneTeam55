@@ -118,33 +118,44 @@ hc = findCorrelation(fi1, cutoff=0.4) # putt any value as a "cutoff"
 hc = sort(hc)
 reduced_Data = df6[,-c(hc)]
 
-keep_names <- names(reduced_Data)
-keep_names <- c(keep_names,"countryname","Area","IncomeGroup","Country.Code")
-
+#keep_names <- names(reduced_Data)
+#keep_names <- c(keep_names,"countryname","Area","IncomeGroup","Country.Code")
 time <- df4[ ,nums]
+keep_names <- c(colnames(time),"countryname","yr")
+new <- df4[ ,names(df4) %in% keep_names]
+new <- new[FALSE, ]
 library(imputeTS)
 char <- df4[ , names(df4) %in% c("countryname","Area","IncomeGroup","Country.Code","yr")]
-
+countries <- as.character(unique(df4$countryname)) #210
 for (c in countries) {
-  bc <- subset(df4, countryname=c)
-  for (i in 2:ncol(bc)) {
-    if (sum(is.na(df[ ,i])) < 20) {
-      n <- ts(df4[ ,i])
-      b <- na_interpolation(n)
-      c <- as.data.frame(b)
-      names(c)[1] <- names(bc)[i-1]
-      char <- merge(char,c,by="countryname")
-      names(char)[i+4] <- names(time)[i-1]
-    }
+  bc <- subset(df4, countryname==c)
+  bc <- bc[ , !(names(bc) %in% c("Area"))]
+  build <- subset(char,countryname==c)
+  build <- build[ ,names(build) %in% c("countryname","yr")]
+  for (i in 4:ncol(bc)) {
+    if (sum(is.na(bc[ ,i])) < 20 & sum(is.na(bc[ ,i])) > 0) {
+      n <- bc[ ,i]
+      b <- na_ma(n,weighting="linear")
+      dfc <- as.data.frame(b)
+      names(dfc)[1] <- names(bc)[i]
+      build <- cbind(build,dfc)
+    } else {
+     dfc <- as.data.frame(bc[ ,i])
+     names(dfc)[1] <- names(bc)[i]
+     build <- cbind(build,dfc)
+   }
+    #new <- build[FALSE, ]
   }
+  new <- rbind(new,build)
 }
 
-write.csv(char,"country_pred_data_v2.csv")
+output <- merge(new,char,by=c("countryname","yr"))
+write.csv(output,"country_pred_data_v2.csv")
 
 
 #rerun our EDA on the imputed data for evaluating the quality of the imputations
 #read in the data
-df <- read.csv("Predictive_Model_country_pred_data_v2.csv")
+df <- read.csv("country_pred_data_v2.csv")
 
 #get a listing of numeric columns
 nums <- unlist(lapply(df, is.numeric))  
