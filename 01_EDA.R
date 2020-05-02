@@ -1,6 +1,5 @@
 #This file does work for EDA, examining missing data etcetera
 
-#set working directory
 
 #list of needed libraries
 #install.packages("fBasics")
@@ -125,11 +124,59 @@ keep_names <- c(keep_names,"countryname","Area","IncomeGroup","Country.Code")
 time <- df4[ ,nums]
 library(imputeTS)
 char <- df4[ , names(df4) %in% c("countryname","Area","IncomeGroup","Country.Code","yr")]
-for (i in 2:ncol(time)) {
-  n <- ts(df4[ ,i])
-  b <- na_interpolation(n)
-  c <- as.data.frame(b)
-  char <- cbind(char,c)
-  names(char)[i+4] <- names(time)[i-1]
+
+for (c in countries) {
+  bc <- subset(df4, countryname=c)
+  for (i in 2:ncol(bc)) {
+    if (sum(is.na(df[ ,i])) < 20) {
+      n <- ts(df4[ ,i])
+      b <- na_interpolation(n)
+      c <- as.data.frame(b)
+      names(c)[1] <- names(bc)[i-1]
+      char <- merge(char,c,by="countryname")
+      names(char)[i+4] <- names(time)[i-1]
+    }
+  }
 }
+
 write.csv(char,"country_pred_data_v2.csv")
+
+
+#rerun our EDA on the imputed data for evaluating the quality of the imputations
+#read in the data
+df <- read.csv("Predictive_Model_country_pred_data_v2.csv")
+
+#get a listing of numeric columns
+nums <- unlist(lapply(df, is.numeric))  
+
+#Try with basicStats from fBasics package
+summary <- basicStats(df[ , nums])
+turned <- as.data.frame(t(summary))
+turned2 <- turned[order(turned$NAs, decreasing = TRUE),]
+
+#build a unique country list
+countries <- as.character(unique(df$countryname)) #210
+
+by_country <- function(data,country) {
+  subdata <- subset(data,countryname==country)
+  summaryc <- basicStats(subdata[ , nums])
+  turnedc <- as.data.frame(t(summaryc))
+  turnedc$countryname <- country
+  return(turnedc)
+}
+
+turned3 <- turned2
+turned3$countryname <-"All"
+#build an empty dataframe to append to
+miss_by_country <- turned3[FALSE, ]
+
+#get missingness summaries by country
+for (c in countries) {
+  miss_by_country <- rbind(miss_by_country,by_country(df,c))
+}
+
+#output 
+write.csv(turned2,"summary_overall_postimp.csv")
+write.csv(miss_by_country,"summary_by_country_postimp.csv")
+
+cor(df[ ,nums])
