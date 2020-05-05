@@ -39,6 +39,9 @@ pop <- read.csv('../ForecastData/API_SP.POP.TOTL_DS2_en_csv_v2_988606.csv',skip=
 summary(pop)
 #minimal missing data
 
+area <- read.csv('../ForecastData/API_AG.LND.FRST.K2_DS2_en_csv_v2_989381.csv',skip=4)
+summary(area)
+
 burn_bio <- read.csv('../ForecastData/Emissions_Land_Use_Burning_Biomass_E_All_data_NOFLAG.csv')
 summary(burn_bio)
 #averaging about 1000 NAs per year
@@ -63,16 +66,23 @@ forest_long2$yr <- as.numeric(substr(forest_long2$yrc,2,5))
 
 #GDP and population follow the same pattern as above
 gdp_long <- gather(gdp, Year, gdp, X1990:X2016, factor_key=TRUE)
-col_subset <- c("Country.Code","Country.Name","Year","gdp")
+col_subset <- c("Country.Code","Year","gdp")
 gdp_long2 <- gdp_long[,names(gdp_long) %in% col_subset]
 gdp_long2$yrc <- lapply(gdp_long2$Year, as.character)
 gdp_long2$yr <- as.numeric(substr(gdp_long2$yrc,2,5))
 
 pop_long <- gather(pop, Year, pop, X1990:X2016, factor_key=TRUE)
-col_subset <- c("Country.Code","Country.Name","Year","pop")
+col_subset <- c("Country.Code","Year","pop")
 pop_long2 <- pop_long[,names(pop_long) %in% col_subset]
 pop_long2$yrc <- lapply(pop_long2$Year, as.character)
 pop_long2$yr <- as.numeric(substr(pop_long2$yrc,2,5))
+
+#arealong
+area_long <- gather(area, Year, forest_area, X1990:X2016, factor_key = TRUE)
+col_subset <- c("Country.Code","Year","forest_area")
+area_long2 <- area_long[ ,names(area_long) %in% col_subset]
+area_long2$yrc <- lapply(area_long2$Year, as.character)
+area_long2$yr <- as.numeric(substr(area_long2$yrc,2,5))
 
 #This function turns/spreads the FAO data sources
 make_useable <- function(data) {
@@ -123,11 +133,14 @@ land_use_dict <- make_dict(landuse)
 step1 <- merge(forest_long2,gdp_long2, by=c("Country.Code","yr")) #5886
 
 #step 1 and pop (5886 & 7128 obs)
-step2 <- merge (step1, pop_long2, by =c("Country.Code","yr")) #5886
+step2 <- merge(step1, pop_long2, by =c("Country.Code","yr")) #5886
+
+#forest area in sq. km
+step2a <- merge(step2, area_long2, by=c("Country.Code","yr"))
 
 #subset columns (we've picked up some extras)
-col_subset <- c("Country.Code","Country.Name","yr","pct_forest","gdp","pop")
-step3 <- step2[ ,names(step2) %in% col_subset]
+col_subset <- c("Country.Code","Country.Name","yr","pct_forest","gdp","pop","forest_area")
+step3 <- step2a[ ,names(step2a) %in% col_subset]
 
 #now merge the FAO data together
 #burn & land cover (7533 & 7587)
