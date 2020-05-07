@@ -54,6 +54,14 @@ landuse <- read.csv('../ForecastData/Inputs_LandUse_E_All_data_NOFLAG.csv')
 summary(landuse)
 #averaging about 3500 missings in early years, decreases closer to the present (we should assess missing data by category; currently multi-row per country)
 
+crop_raw <- read.csv('../ForecastData/Trade_Crops_Livestock_E_All_Data_NOFLAG.csv')
+#subset down to export, soybeans, bovine meat, oil, palm palm kernal, oil, soybean
+crop <- subset(crop_raw, Element.Code==5910 & Item.Code %in% c(236, 2071, 257, 258, 237))
+
+fexport_raw <- read.csv('../ForecastData/Forestry_E_All_Data_NOFLAG.csv')
+#subset down to Production, sawlogs, other industrial roundtree,pulpwood, and sawnwood
+fexport <- subset(fexport_raw, Element.Code==5516 & Item.Code %in% c(1601,1602,1603,1604,1623,1626,1634,1633))
+
 #start by turning forest area: this is the target and we need to match the rest of the data
 #to this
 forest_long <- gather(forest_area, Year, pct_forest, X1990:X2016, factor_key=TRUE)
@@ -126,6 +134,10 @@ fin_land_cover <- make_useable(land_cover)
 land_cover_dict <- make_dict(land_cover)
 fin_land_use <- make_useable(landuse)
 land_use_dict <- make_dict(landuse)
+fin_crop <- make_useable(crop)
+crop_dict <- make_dict(crop)
+fin_export <- make_useable(fexport)
+export_dict <- make_dict(fexport)
 
 #Now we have to start merging
 
@@ -157,9 +169,14 @@ side2 <- merge(side1,fin_land_use, by=c("Area","yr"), all = TRUE) #7290 orig/ ke
 only_side1 <- anti_join(side1,fin_land_use, by=c("Area","yr")) #Vatican & Monaco
 only_land_use <- anti_join(fin_land_use,side1, by=c("Area","yr")) #USSR (which may be useful for missing Russia data)
 
+#side 2 & crop
+side2a <- merge(side2,fin_crop, by=c("Area","yr"), all=TRUE)
+side2b <- merge(side2a,fin_export, by=c("Area","yr"),all=TRUE)
+
 #drop some extraneous columns and do some create a new country name var that will be our combiner
 col_drop <- c("Year.x","yrc","Year","yrc.y")
-side3 <- side2[ , !(names(side2) %in% col_drop)]
+side3 <- side2b[ , !(names(side2b) %in% col_drop)]
+side3 <- subset(side3, Area!="Belgium")
 
 side3$countryname <- as.character(side3$Area)
 #some fixes for better matches
@@ -190,7 +207,9 @@ side3$countryname <- ifelse(side3$countryname=="Bahamas","Bahamas, The",
                      ifelse(side3$countryname=="Venezuela (Bolivarian Republic of)","Venezuela, RB",
                      ifelse(side3$countryname=="United States Virgin Islands","Virgin Islands (U.S.)",
                      ifelse(side3$countryname=="Yemen","Yemen, Rep.",
-                            side3$countryname)))))))))))))))))))))))))))
+                     ifelse(side3$countryname=="Viet Nam","Vietnam",
+                     ifelse(side3$countryname=="Belgium-Luxembourg","Belgium",
+                            side3$countryname)))))))))))))))))))))))))))))
 step3$countryname <- as.character(step3$Country.Name)
 
 #step1 try to merge them together (5886 & 7344)
@@ -205,7 +224,7 @@ only_step3 <- anti_join(step3,side3,by=c("countryname","yr")) #we'll save this
 only_side3 <- anti_join(side3,step3,by=c("countryname","yr"))
 
 #full dict
-full_dict <- rbind(burn_bio_dict,land_use_dict,land_cover_dict)
+full_dict <- rbind(burn_bio_dict,land_use_dict,land_cover_dict,crop_dict,export_dict)
 
 #output all our data
 out4 <- apply(step4,2,as.character)

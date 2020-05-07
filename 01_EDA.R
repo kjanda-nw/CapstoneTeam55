@@ -7,7 +7,7 @@ library(fBasics)
 library(dplyr)
 library(tidyr)
 library(plyr)
-
+setwd("~/Documents/MSDS498/CapstoneTeam55")
 #read in the data
 df <- read.csv("country_pred_data.csv")
 
@@ -41,14 +41,16 @@ for (c in countries) {
 }
 
 #output 
-#write.csv(turned2,"../ForecastData/summary_overall.csv")
-#write.csv(miss_by_country,"../ForecastData/summary_by_country.csv")
+write.csv(turned2,"../ForecastData/summary_overall.csv")
+write.csv(miss_by_country,"../ForecastData/summary_by_country.csv")
 
 #merge on metadata
-meta <- read.csv("../ForecastData/Predictive_model_TABLE_FOR_PRED_MODEL_FILTERS_Metadata_Country_API_AG.LND.FRST.K2_DS2_en_csv_v2_989381.csv")
+meta <- read.csv("../ForecastData/Predictive_model_20200505_TABLE_FOR_PRED_MODEL_FILTERS_Metadata_Country_API_AG.LND.FRST.K2_DS2_en_csv_v2_989381.csv")
 colnames(meta)[1] <- "Country.Code"
-meta <- meta[ ,c("Country.Code","IncomeGroup")]
+meta <- meta[ ,c("Country.Code","IncomeGroup","Sub.Regions","Commodity.driven.deforestation","Forestry","Wildfire","Shifting.agriculture")]
 df2 <- merge(df,meta,by="Country.Code")
+
+
 
 #drop vars based on EDA
 drop_vars <- c("x_6611_5110","x_6616_5110","x_6630_5110","x_6633_5110","x_6640_5110","x_6641_5110",
@@ -73,7 +75,7 @@ df3 <- df2[ ,!(names(df2) %in% drop_vars)]
 #high missingess first 7 countries
 #Countries with high missingness in the target (missing more than 10 years)
 drop_countries <- c("Gibraltar","Macao SAR, China", "Monaco","Montenegro","Serbia","South Sudan","Sudan",
-                    "Hong Kong SAR, China","Luxembourg","Belgium")
+                    "Hong Kong SAR, China")
 df4 <- subset(df3, !(countryname %in% drop_countries))
 
 
@@ -125,7 +127,7 @@ keep_names <- c(colnames(time),"countryname","yr")
 new <- df4[ ,names(df4) %in% keep_names]
 new <- new[FALSE, ]
 library(imputeTS)
-char <- df4[ , names(df4) %in% c("countryname","Area","IncomeGroup","Country.Code","yr")]
+char <- df4[ , names(df4) %in% c("countryname","Area","IncomeGroup","Country.Code","yr","Sub.Regions","Commodity.driven.deforestation","Forestry","Wildfire","Shifting.agriculture")]
 countries <- as.character(unique(df4$countryname)) #210
 for (c in countries) {
   bc <- subset(df4, countryname==c)
@@ -189,8 +191,7 @@ new$datagroup <- ifelse(new$countryname %in% c('Rusian Federation','Brazil', 'Ca
                                                "Cote d'Ivoire",
 'New Zealand',
 'Ukraine',
-'Poland',
-'Ghana'),1,ifelse(new$countryname %in% c('Afghanistan',
+'Poland','Vietnam'),1,ifelse(new$countryname %in% c('Ghana','Afghanistan','Belgium',
                                          'Albania',
                                          'Algeria',
                                          'Antigua and Barbuda',
@@ -312,7 +313,7 @@ new$datagroup <- ifelse(new$countryname %in% c('Rusian Federation','Brazil', 'Ca
                                          'Virgin Islands (U.S.)',
                                          'Yemen, Rep.'),2,3))
 
-new$forestgroup <- ifelse(new$countryname %in% c('Suriname',
+new$forestgroup <- ifelse(new$countryname %in% c('Suriname','Belgium',
                                                  'Micronesia, Fed. Sts.',
                                                  'Palau',
                                                  'Guyana',
@@ -367,8 +368,7 @@ new$forestgroup <- ifelse(new$countryname %in% c('Suriname',
                                                  'Guam',
                                                  'Gambia, The',
                                                  'New Caledonia',
-                                                 'Senegal',
-                                                 'Trinidad and Tobago'),1,ifelse(new$countryname %in% c('Cameroon',
+                                                 'Senegal'),1,ifelse(new$countryname %in% c('Trinidad and Tobago','Cameroon',
                                                                                                         'Benin',
                                                                                                         'Bosnia and Herzegovina',
                                                                                                         'St. Kitts and Nevis',
@@ -424,7 +424,7 @@ new$forestgroup <- ifelse(new$countryname %in% c('Suriname',
 'Cabo Verde',
 'China',
 'Mauritius',
-'Cyprus'),2,ifelse(new$countryname %in% c('Uganda',
+'Vietnam'),2,ifelse(new$countryname %in% c('Cyprus','Uganda',
                                           'Australia',
                                           'Ukraine',
                                           'Eritrea',
@@ -499,6 +499,7 @@ new$gdpgroup <- ifelse(new$countryname %in% c('United States',
                                               'Russian Federation',
                                               'Australia',
                                               'Switzerland',
+                                              'Belgium',
                                               'Sweden',
                                               'Turkey',
                                               'Argentina',
@@ -509,22 +510,22 @@ new$gdpgroup <- ifelse(new$countryname %in% c('United States',
                                               'Poland',
                                               'Saudi Arabia',
                                               'Greece',
+                                              'Iran, Islamic Rep.',
                                               'South Africa',
                                               'Thailand',
                                               'Finland',
                                               'Portugal',
                                               'Ireland',
-                                              'Iran, Islamic Rep.',
-                                              'Israel',
                                               'Iraq',
+                                              'Israel',
                                               'United Arab Emirates',
                                               'Venezuela, RB',
                                               'Malaysia',
                                               'Colombia',
                                               'Nigeria',
                                               'Czech Republic',
-                                              'New Zealand',
                                               'Hungary',
+                                              'New Zealand',
                                               'Chile',
                                               'Philippines',
                                               'Pakistan',
@@ -537,25 +538,21 @@ new$gdpgroup <- ifelse(new$countryname %in% c('United States',
                                               'Morocco',
                                               'Kuwait',
                                               'Slovak Republic',
-                                              'Cuba',
-                                              'Croatia'),1,ifelse(new$countryname %in% c('Libya',
-                                                                                         'Ecuador',
+                                              'Croatia'),1,ifelse(new$countryname %in% c('Vietnam','Cuba','Libya',
+                                                                                         'Ecuador', 'Myanmar',
                                                                                          'Kazakhstan',
-                                                                                         'Slovenia',
+                                                                                         'Slovenia', 'Lithuania',
                                                                                          'Tunisia',
                                                                                          'Dominican Republic',
                                                                                          'Qatar',
                                                                                          'Uruguay',
                                                                                          'Guatemala',
-                                                                                         'Syrian Arab Republic',
                                                                                          'Belarus',
                                                                                          'Oman',
                                                                                          'Bulgaria',
-                                                                                         'Lebanon',
-                                                                                         'Sri Lanka',
-                                                                                         'Lithuania',
-                                                                                         'Angola',
-                                                                                         'Costa Rica',
+                                                                                         'Lebanon', 'Latvia',
+                                                                                         'Sri Lanka', 'Angola',
+                                                                                         'Costa Rica','Syrian Arab Republic',
                                                                                          'Cameroon',
                                                                                          "Cote d'Ivoire",
 'Tanzania',
@@ -564,22 +561,19 @@ new$gdpgroup <- ifelse(new$countryname %in% c('United States',
 'Cyprus',
 'Panama',
 'El Salvador',
-'Ethiopia',
-'Yemen, Rep.',
-'Latvia',
-'Trinidad and Tobago',
+'Estonia',
+'Afghanistan',
+'Ethiopia', 'Yemen, Rep.',
+'Trinidad and Tobago','Bosnia and Herzegovina',
 'Bahrain',
 'Congo, Dem. Rep.',
-'Myanmar',
 'Jordan',
-'Estonia',
 'Paraguay',
 'Jamaica',
 'Bahamas, The',
 'Azerbaijan',
 'Senegal',
 'Bolivia',
-'Bosnia and Herzegovina',
 'Honduras',
 'Ghana',
 'Botswana',
@@ -589,28 +583,20 @@ new$gdpgroup <- ifelse(new$countryname %in% c('United States',
 'Georgia',
 'Nepal',
 'Turkmenistan',
-'Mauritius',
+'Mauritius','Cambodia',
 'Albania',
-'Nicaragua',
-'Papua New Guinea',
-'North Macedonia',
-'Zambia'),2,ifelse(new$countryname %in% c('Namibia',
-                                          'Afghanistan',
+'Nicaragua'),2,ifelse(new$countryname %in% c('Papua New Guinea','North Macedonia','Zambia','Namibia','Guam',
                                           'Mali',
-                                          'Cambodia',
-                                          'Madagascar',
-                                          'Burkina Faso',
+                                          'Madagascar','Cayman Islands',
+                                          'Burkina Faso','Virgin Islands (U.S.)',
                                           'Haiti',
                                           'Benin',
                                           'Guinea',
-                                          'Guam',
                                           'French Polynesia',
-                                          'Virgin Islands (U.S.)',
                                           'Congo, Rep.',
                                           'Malawi',
                                           'Barbados',
-                                          'Cayman Islands',
-                                          'New Caledonia',
+                                          'New Caledonia','Timor-Leste',
                                           'Armenia',
                                           'Chad',
                                           'Niger',
@@ -622,16 +608,13 @@ new$gdpgroup <- ifelse(new$countryname %in% c('United States',
                                           'Togo',
                                           'Rwanda',
                                           'Lao PDR',
+                                          'Liberia',
                                           'Mauritania',
                                           'Sierra Leone',
                                           'Central African Republic',
-                                          'Suriname',
-                                          'Northern Mariana Islands',
-                                          'Lesotho',
-                                          'Burundi',
-                                          'Maldives',
+                                          'Suriname','Lesotho','Burundi','Maldives',
                                           'Belize',
-                                          'Liberia',
+                                          'Northern Mariana Islands',
                                           'St. Lucia',
                                           'Eritrea',
                                           'Antigua and Barbuda',
@@ -641,7 +624,6 @@ new$gdpgroup <- ifelse(new$countryname %in% c('United States',
                                           'Bhutan',
                                           'Grenada',
                                           'Comoros',
-                                          'Timor-Leste',
                                           'St. Kitts and Nevis',
                                           'Solomon Islands',
                                           'St. Vincent and the Grenadines',
@@ -664,6 +646,7 @@ new$popgroup <- ifelse(new$countryname %in% c('China',
                                               'Japan',
                                               'Mexico',
                                               'Philippines',
+                                              'Vietnam',
                                               'Germany',
                                               'Ethiopia',
                                               'Iran, Islamic Rep.',
@@ -707,8 +690,7 @@ new$popgroup <- ifelse(new$countryname %in% c('China',
 'Cameroon',
 'Netherlands',
 'Chile',
-'Kazakhstan',
-'Ecuador'),1,ifelse(new$countryname %in% c('Cambodia',
+'Kazakhstan'),1,ifelse(new$countryname %in% c('Ecuador','Cambodia',
                                            'Burkina Faso',
                                            'Niger',
                                            'Guatemala',
@@ -718,6 +700,7 @@ new$popgroup <- ifelse(new$countryname %in% c('China',
                                            'Zambia',
                                            'Cuba',
                                            'Greece',
+                                           'Belgium',
                                            'Senegal',
                                            'Portugal',
                                            'Czech Republic',
@@ -763,8 +746,7 @@ new$popgroup <- ifelse(new$countryname %in% c('China',
                                            'Georgia',
                                            'Central African Republic',
                                            'Bosnia and Herzegovina',
-                                           'Puerto Rico',
-                                           'United Arab Emirates'),2,ifelse(new$countryname %in% c('Lithuania',
+                                           'Puerto Rico'),2,ifelse(new$countryname %in% c('United Arab Emirates','Lithuania',
                                                                                                    'Congo, Rep.',
                                                                                                    'Uruguay',
                                                                                                    'Panama',
@@ -825,24 +807,77 @@ new$popgroup <- ifelse(new$countryname %in% c('China',
 
 output <- merge(new,char,by=c("countryname","yr"))
 
-oth <- c("x_6646_5110","x_6646_72151","IncomeGroup.y")
+oth <- c("x_6646_5110","x_6646_72151","IncomeGroup.y","yrc.x.1","Year.y.1","Sub.Regions.y","Commodity.driven.deforestation.y","Forestry.y","Wildfire.y","Shifting.agriculture.y")
 output2 <- output[ ,!(names(output) %in% oth)]
 write.csv(output2,"country_pred_data_v2.csv")
 
+updated <- read.csv("country_pred_data_v2.csv")
 #build our delta dataset
-forlag <- output2[ ,names(output2) %in% c("Country.Code","yr","forest_area","gdp","pop")]
+forlag <- updated[ ,names(updated) %in% c("Country.Code","yr","forest_area","gdp","pop",'x_257_5910',
+                                          'x_236_5910',
+                                          'x_2071_5910',
+                                          'x_258_5910',
+                                          'x_237_5910',
+                                          'x_1601_5516',
+                                          'x_1604_5516',
+                                          'x_1623_5516',
+                                          'x_1626_5516',
+                                          'x_1633_5516',
+                                          'x_1602_5516',
+                                          'x_1603_5516',
+                                          'x_1634_5516',
+                                          'x_6798_7246',
+                                          'x_6798_7245',
+                                          'x_6610_5110',
+                                          'x_6716_5110',
+                                          'x_6717_5110')]
 forlag2 <- subset(forlag,yr<2016)  
 forlag2$yr <- forlag2$yr+1
 
 colnames(forlag2)[2] <- "lag_gdp"
 colnames(forlag2)[3] <- "lag_pop"
-colnames(forlag2)[4] <- "lag_forest"
+colnames(forlag2)[4] <- "lag_forest_area"
+colnames(forlag2)[13] <- 'lag_x_257_5910'
+colnames(forlag2)[11] <- 'lag_x_236_5910'
+colnames(forlag2)[10] <- 'lag_x_2071_5910'
+colnames(forlag2)[14] <- 'lag_x_258_5910'
+colnames(forlag2)[12] <- 'lag_x_237_5910'
+colnames(forlag2)[15] <- 'lag_x_1601_5516'
+colnames(forlag2)[18] <- 'lag_x_1604_5516'
+colnames(forlag2)[19] <- 'lag_x_1623_5516'
+colnames(forlag2)[20] <- 'lag_x_1626_5516'
+colnames(forlag2)[21] <- 'lag_x_1633_5516'
+colnames(forlag2)[16] <- 'lag_x_1602_5516'
+colnames(forlag2)[17] <- 'lag_x_1603_5516'
+colnames(forlag2)[22] <- 'lag_x_1634_5516'
+colnames(forlag2)[6] <- 'lag_x_6798_7246'
+colnames(forlag2)[5] <- 'lag_x_6798_7245'
+colnames(forlag2)[7] <- 'lag_x_6610_5110'
+colnames(forlag2)[8] <- 'lag_x_6716_5110'
+colnames(forlag2)[9] <- 'lag_x_6717_5110'
 
-output3 <- merge(output2,forlag2,by=c("Country.Code","yr"))
-output3$delta_forest <- (output3$forest_area - output3$lag_forest)/output3$forest_area
-output3$delta_gdp <- (output3$gdp - output3$lag_gdp)/output3$gdp
-output3$delta_pop <- (output3$pop - output3$lag_pop)/output3$pop
-
+output3 <- merge(updated,forlag2,by=c("Country.Code","yr"))
+output3$delta_gdp<-ifelse(output3$gdp==0 | is.na(output3$gdp),0,(output3$gdp-output3$lag_gdp)/output3$gdp)
+output3$delta_forest_area<-ifelse(output3$forest_area==0 | is.na(output3$forest_area),0,(output3$forest_area-output3$lag_forest_area)/output3$forest_area)
+output3$delta_pop<-ifelse(output3$pop==0 | is.na(output3$pop),0,(output3$pop-output3$lag_pop)/output3$pop)
+output3$delta_x_257_5910<-ifelse(output3$x_257_5910==0 | is.na(output3$x_257_5910),0,(output3$x_257_5910-output3$lag_x_257_5910)/output3$x_257_5910)
+output3$delta_x_236_5910<-ifelse(output3$x_236_5910==0 | is.na(output3$x_236_5910),0,(output3$x_236_5910-output3$lag_x_236_5910)/output3$x_236_5910)
+output3$delta_x_2071_5910<-ifelse(output3$x_2071_5910==0 | is.na(output3$x_2071_5910),0,(output3$x_2071_5910-output3$lag_x_2071_5910)/output3$x_2071_5910)
+output3$delta_x_258_5910<-ifelse(output3$x_258_5910==0 | is.na(output3$x_258_5910),0,(output3$x_258_5910-output3$lag_x_258_5910)/output3$x_258_5910)
+output3$delta_x_237_5910<-ifelse(output3$x_237_5910==0 | is.na(output3$x_237_5910),0,(output3$x_237_5910-output3$lag_x_237_5910)/output3$x_237_5910)
+output3$delta_x_1601_5516<-ifelse(output3$x_1601_5516==0 | is.na(output3$x_1601_5516),0,(output3$x_1601_5516-output3$lag_x_1601_5516)/output3$x_1601_5516)
+output3$delta_x_1604_5516<-ifelse(output3$x_1604_5516==0 | is.na(output3$x_1604_5516),0,(output3$x_1604_5516-output3$lag_x_1604_5516)/output3$x_1604_5516)
+output3$delta_x_1623_5516<-ifelse(output3$x_1623_5516==0 | is.na(output3$x_1623_5516),0,(output3$x_1623_5516-output3$lag_x_1623_5516)/output3$x_1623_5516)
+output3$delta_x_1626_5516<-ifelse(output3$x_1626_5516==0 | is.na(output3$x_1626_5516),0,(output3$x_1626_5516-output3$lag_x_1626_5516)/output3$x_1626_5516)
+output3$delta_x_1633_5516<-ifelse(output3$x_1633_5516==0 | is.na(output3$x_1633_5516),0,(output3$x_1633_5516-output3$lag_x_1633_5516)/output3$x_1633_5516)
+output3$delta_x_1602_5516<-ifelse(output3$x_1602_5516==0 | is.na(output3$x_1602_5516),0,(output3$x_1602_5516-output3$lag_x_1602_5516)/output3$x_1602_5516)
+output3$delta_x_1603_5516<-ifelse(output3$x_1603_5516==0 | is.na(output3$x_1603_5516),0,(output3$x_1603_5516-output3$lag_x_1603_5516)/output3$x_1603_5516)
+output3$delta_x_1634_5516<-ifelse(output3$x_1634_5516==0 | is.na(output3$x_1634_5516),0,(output3$x_1634_5516-output3$lag_x_1634_5516)/output3$x_1634_5516)
+output3$delta_x_6798_7246<-ifelse(output3$x_6798_7246==0 | is.na(output3$x_6798_7246),0,(output3$x_6798_7246-output3$lag_x_6798_7246)/output3$x_6798_7246)
+output3$delta_x_6798_7245<-ifelse(output3$x_6798_7245==0 | is.na(output3$x_6798_7245),0,(output3$x_6798_7245-output3$lag_x_6798_7245)/output3$x_6798_7245)
+output3$delta_x_6610_5110<-ifelse(output3$x_6610_5110==0 | is.na(output3$x_6610_5110),0,(output3$x_6610_5110-output3$lag_x_6610_5110)/output3$x_6610_5110)
+output3$delta_x_6716_5110<-ifelse(output3$x_6716_5110==0 | is.na(output3$x_6716_5110),0,(output3$x_6716_5110-output3$lag_x_6716_5110)/output3$x_6716_5110)
+output3$delta_x_6717_5110<-ifelse(output3$x_6717_5110==0 | is.na(output3$x_6717_5110),0,(output3$x_6717_5110-output3$lag_x_6717_5110)/output3$x_6717_5110)
 #output this data
 write.csv(output3,"country_pred_delta_forest.csv")
   
