@@ -9,7 +9,7 @@ library(tidyr)
 library(plyr)
 setwd("~/Documents/MSDS498/CapstoneTeam55")
 #read in the data
-df <- read.csv("country_pred_data.csv")
+df <- read.csv("./Data/country_pred_data.csv")
 
 #get a listing of numeric columns
 nums <- unlist(lapply(df, is.numeric))  
@@ -809,9 +809,9 @@ output <- merge(new,char,by=c("countryname","yr"))
 
 oth <- c("x_6646_5110","x_6646_72151","IncomeGroup.y","yrc.x.1","Year.y.1","Sub.Regions.y","Commodity.driven.deforestation.y","Forestry.y","Wildfire.y","Shifting.agriculture.y")
 output2 <- output[ ,!(names(output) %in% oth)]
-write.csv(output2,"country_pred_data_v2.csv")
+write.csv(output2,"./Data/country_pred_data_v2.csv")
 
-updated <- read.csv("country_pred_data_v2.csv")
+updated <- read.csv("./Data/country_pred_data_v2.csv")
 #build our delta dataset
 forlag <- updated[ ,names(updated) %in% c("Country.Code","yr","forest_area","gdp","pop",'x_257_5910',
                                           'x_236_5910',
@@ -857,29 +857,29 @@ colnames(forlag2)[8] <- 'lag_x_6716_5110'
 colnames(forlag2)[9] <- 'lag_x_6717_5110'
 
 output3 <- merge(updated,forlag2,by=c("Country.Code","yr"))
-output3$delta_gdp<-ifelse(output3$gdp==0 | is.na(output3$gdp),0,(output3$gdp-output3$lag_gdp)/output3$gdp)
-output3$delta_forest_area<-ifelse(output3$forest_area==0 | is.na(output3$forest_area),0,(output3$forest_area-output3$lag_forest_area)/output3$forest_area)
-output3$delta_pop<-ifelse(output3$pop==0 | is.na(output3$pop),0,(output3$pop-output3$lag_pop)/output3$pop)
-output3$delta_x_257_5910<-ifelse(output3$x_257_5910==0 | is.na(output3$x_257_5910),0,(output3$x_257_5910-output3$lag_x_257_5910)/output3$x_257_5910)
-output3$delta_x_236_5910<-ifelse(output3$x_236_5910==0 | is.na(output3$x_236_5910),0,(output3$x_236_5910-output3$lag_x_236_5910)/output3$x_236_5910)
-output3$delta_x_2071_5910<-ifelse(output3$x_2071_5910==0 | is.na(output3$x_2071_5910),0,(output3$x_2071_5910-output3$lag_x_2071_5910)/output3$x_2071_5910)
-output3$delta_x_258_5910<-ifelse(output3$x_258_5910==0 | is.na(output3$x_258_5910),0,(output3$x_258_5910-output3$lag_x_258_5910)/output3$x_258_5910)
-output3$delta_x_237_5910<-ifelse(output3$x_237_5910==0 | is.na(output3$x_237_5910),0,(output3$x_237_5910-output3$lag_x_237_5910)/output3$x_237_5910)
-output3$delta_x_1601_5516<-ifelse(output3$x_1601_5516==0 | is.na(output3$x_1601_5516),0,(output3$x_1601_5516-output3$lag_x_1601_5516)/output3$x_1601_5516)
-output3$delta_x_1604_5516<-ifelse(output3$x_1604_5516==0 | is.na(output3$x_1604_5516),0,(output3$x_1604_5516-output3$lag_x_1604_5516)/output3$x_1604_5516)
-output3$delta_x_1623_5516<-ifelse(output3$x_1623_5516==0 | is.na(output3$x_1623_5516),0,(output3$x_1623_5516-output3$lag_x_1623_5516)/output3$x_1623_5516)
-output3$delta_x_1626_5516<-ifelse(output3$x_1626_5516==0 | is.na(output3$x_1626_5516),0,(output3$x_1626_5516-output3$lag_x_1626_5516)/output3$x_1626_5516)
-output3$delta_x_1633_5516<-ifelse(output3$x_1633_5516==0 | is.na(output3$x_1633_5516),0,(output3$x_1633_5516-output3$lag_x_1633_5516)/output3$x_1633_5516)
-output3$delta_x_1602_5516<-ifelse(output3$x_1602_5516==0 | is.na(output3$x_1602_5516),0,(output3$x_1602_5516-output3$lag_x_1602_5516)/output3$x_1602_5516)
-output3$delta_x_1603_5516<-ifelse(output3$x_1603_5516==0 | is.na(output3$x_1603_5516),0,(output3$x_1603_5516-output3$lag_x_1603_5516)/output3$x_1603_5516)
-output3$delta_x_1634_5516<-ifelse(output3$x_1634_5516==0 | is.na(output3$x_1634_5516),0,(output3$x_1634_5516-output3$lag_x_1634_5516)/output3$x_1634_5516)
-output3$delta_x_6798_7246<-ifelse(output3$x_6798_7246==0 | is.na(output3$x_6798_7246),0,(output3$x_6798_7246-output3$lag_x_6798_7246)/output3$x_6798_7246)
-output3$delta_x_6798_7245<-ifelse(output3$x_6798_7245==0 | is.na(output3$x_6798_7245),0,(output3$x_6798_7245-output3$lag_x_6798_7245)/output3$x_6798_7245)
-output3$delta_x_6610_5110<-ifelse(output3$x_6610_5110==0 | is.na(output3$x_6610_5110),0,(output3$x_6610_5110-output3$lag_x_6610_5110)/output3$x_6610_5110)
-output3$delta_x_6716_5110<-ifelse(output3$x_6716_5110==0 | is.na(output3$x_6716_5110),0,(output3$x_6716_5110-output3$lag_x_6716_5110)/output3$x_6716_5110)
-output3$delta_x_6717_5110<-ifelse(output3$x_6717_5110==0 | is.na(output3$x_6717_5110),0,(output3$x_6717_5110-output3$lag_x_6717_5110)/output3$x_6717_5110)
+output3$delta_gdp<-ifelse(output3$lag_gdp==0 | is.na(output3$lag_gdp),0,(output3$gdp-output3$lag_gdp)/output3$lag_gdp)
+output3$delta_forest_area<-ifelse(output3$lag_forest_area==0 | is.na(output3$lag_forest_area),0,(output3$forest_area-output3$lag_forest_area)/output3$lag_forest_area)
+output3$delta_pop<-ifelse(output3$lag_pop==0 | is.na(output3$lag_pop),0,(output3$pop-output3$lag_pop)/output3$lag_pop)
+output3$delta_x_257_5910<-ifelse(output3$lag_x_257_5910==0 | is.na(output3$lag_x_257_5910),0,(output3$x_257_5910-output3$lag_x_257_5910)/output3$lag_x_257_5910)
+output3$delta_x_236_5910<-ifelse(output3$lag_x_236_5910==0 | is.na(output3$lag_x_236_5910),0,(output3$x_236_5910-output3$lag_x_236_5910)/output3$lag_x_236_5910)
+output3$delta_x_2071_5910<-ifelse(output3$lag_x_2071_5910==0 | is.na(output3$lag_x_2071_5910),0,(output3$x_2071_5910-output3$lag_x_2071_5910)/output3$lag_x_2071_5910)
+output3$delta_x_258_5910<-ifelse(output3$lag_x_258_5910==0 | is.na(output3$lag_x_258_5910),0,(output3$x_258_5910-output3$lag_x_258_5910)/output3$lag_x_258_5910)
+output3$delta_x_237_5910<-ifelse(output3$lag_x_237_5910==0 | is.na(output3$lag_x_237_5910),0,(output3$x_237_5910-output3$lag_x_237_5910)/output3$lag_x_237_5910)
+output3$delta_x_1601_5516<-ifelse(output3$lag_x_1601_5516==0 | is.na(output3$lag_x_1601_5516),0,(output3$x_1601_5516-output3$lag_x_1601_5516)/output3$lag_x_1601_5516)
+output3$delta_x_1604_5516<-ifelse(output3$lag_x_1604_5516==0 | is.na(output3$lag_x_1604_5516),0,(output3$x_1604_5516-output3$lag_x_1604_5516)/output3$lag_x_1604_5516)
+output3$delta_x_1623_5516<-ifelse(output3$lag_x_1623_5516==0 | is.na(output3$lag_x_1623_5516),0,(output3$x_1623_5516-output3$lag_x_1623_5516)/output3$lag_x_1623_5516)
+output3$delta_x_1626_5516<-ifelse(output3$lag_x_1626_5516==0 | is.na(output3$lag_x_1626_5516),0,(output3$x_1626_5516-output3$lag_x_1626_5516)/output3$lag_x_1626_5516)
+output3$delta_x_1633_5516<-ifelse(output3$lag_x_1633_5516==0 | is.na(output3$lag_x_1633_5516),0,(output3$x_1633_5516-output3$lag_x_1633_5516)/output3$lag_x_1633_5516)
+output3$delta_x_1602_5516<-ifelse(output3$lag_x_1602_5516==0 | is.na(output3$lag_x_1602_5516),0,(output3$x_1602_5516-output3$lag_x_1602_5516)/output3$lag_x_1602_5516)
+output3$delta_x_1603_5516<-ifelse(output3$lag_x_1603_5516==0 | is.na(output3$lag_x_1603_5516),0,(output3$x_1603_5516-output3$lag_x_1603_5516)/output3$lag_x_1603_5516)
+output3$delta_x_1634_5516<-ifelse(output3$lag_x_1634_5516==0 | is.na(output3$lag_x_1634_5516),0,(output3$x_1634_5516-output3$lag_x_1634_5516)/output3$lag_x_1634_5516)
+output3$delta_x_6798_7246<-ifelse(output3$lag_x_6798_7246==0 | is.na(output3$lag_x_6798_7246),0,(output3$x_6798_7246-output3$lag_x_6798_7246)/output3$lag_x_6798_7246)
+output3$delta_x_6798_7245<-ifelse(output3$lag_x_6798_7245==0 | is.na(output3$lag_x_6798_7245),0,(output3$x_6798_7245-output3$lag_x_6798_7245)/output3$lag_x_6798_7245)
+output3$delta_x_6610_5110<-ifelse(output3$lag_x_6610_5110==0 | is.na(output3$lag_x_6610_5110),0,(output3$x_6610_5110-output3$lag_x_6610_5110)/output3$lag_x_6610_5110)
+output3$delta_x_6716_5110<-ifelse(output3$lag_x_6716_5110==0 | is.na(output3$lag_x_6716_5110),0,(output3$x_6716_5110-output3$lag_x_6716_5110)/output3$lag_x_6716_5110)
+output3$delta_x_6717_5110<-ifelse(output3$lag_x_6717_5110==0 | is.na(output3$lag_x_6717_5110),0,(output3$x_6717_5110-output3$lag_x_6717_5110)/output3$lag_x_6717_5110)
 #output this data
-write.csv(output3,"country_pred_delta_forest.csv")
+write.csv(output3,"./Data/country_pred_delta_forest.csv")
   
 #rerun our EDA on the imputed data for evaluating the quality of the imputations
 #read in the data

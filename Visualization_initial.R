@@ -2,7 +2,7 @@ library(ggplot2)
 
 setwd("~/Documents/MSDS498/CapstoneTeam55")
 #read in the data
-df <- read.csv("country_pred_data.csv")
+df <- read.csv("./Data/country_pred_data.csv")
 
 #subset to 2016;
 df16 <- subset(df, yr==2016)
