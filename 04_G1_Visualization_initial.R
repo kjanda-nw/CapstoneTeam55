@@ -1,3 +1,12 @@
+header = '
+MSDS 498
+Spring 2020
+Team 55 - Forest Tracker
+
+Purpose: The purposed of this program was to build some visualizations of the forest area data. These
+         visualizations can be found in the initial findings doc
+'
+
 library(ggplot2)
 
 setwd("~/Documents/MSDS498/CapstoneTeam55")

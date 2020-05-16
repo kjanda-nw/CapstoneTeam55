@@ -1,20 +1,31 @@
-#This file does work for EDA, examining missing data etcetera
+header = '
+MSDS 498
+Spring 2020
+Team 55 - Forest Tracker
 
-
+Purpose: The purposed of this program was dig into the current file. It examines missingness and then
+         has some of our data cleaning including record drops, variable drops, and imputation. Then 
+         the EDA summary is rerun to verify the quality of the imputations
+'
 #list of needed libraries
-#install.packages("fBasics")
 library(fBasics)
 library(dplyr)
 library(tidyr)
 library(plyr)
+library(caret)
+library(imputeTS)
+
+#set working directory
 setwd("~/Documents/MSDS498/CapstoneTeam55")
+
 #read in the data
 df <- read.csv("./Data/country_pred_data.csv")
 
 #get a listing of numeric columns
 nums <- unlist(lapply(df, is.numeric))  
 
-#Try with basicStats from fBasics package
+#Build a data frame of the summary statistcs for each variable
+#This allows us to output to excel and manipulate
 summary <- basicStats(df[ , nums])
 turned <- as.data.frame(t(summary))
 turned2 <- turned[order(turned$NAs, decreasing = TRUE),]
@@ -22,6 +33,7 @@ turned2 <- turned[order(turned$NAs, decreasing = TRUE),]
 #build a unique country list
 countries <- as.character(unique(df$countryname)) #210
 
+#run the same summaries by country
 by_country <- function(data,country) {
   subdata <- subset(data,countryname==country)
   summaryc <- basicStats(subdata[ , nums])
@@ -40,7 +52,7 @@ for (c in countries) {
   miss_by_country <- rbind(miss_by_country,by_country(df,c))
 }
 
-#output 
+#output for examination
 write.csv(turned2,"../ForecastData/summary_overall.csv")
 write.csv(miss_by_country,"../ForecastData/summary_by_country.csv")
 
@@ -49,8 +61,6 @@ meta <- read.csv("../ForecastData/Predictive_model_20200505_TABLE_FOR_PRED_MODEL
 colnames(meta)[1] <- "Country.Code"
 meta <- meta[ ,c("Country.Code","IncomeGroup","Sub.Regions","Commodity.driven.deforestation","Forestry","Wildfire","Shifting.agriculture")]
 df2 <- merge(df,meta,by="Country.Code")
-
-
 
 #drop vars based on EDA
 drop_vars <- c("x_6611_5110","x_6616_5110","x_6630_5110","x_6633_5110","x_6640_5110","x_6641_5110",
@@ -65,10 +75,9 @@ drop_vars <- c("x_6611_5110","x_6616_5110","x_6630_5110","x_6633_5110","x_6640_5
                "x_6797_722911","x_6798_719411","X","Year.y","yrc.x","Country.Name",
                #Vars being dropped being too similar to target
                "x_6646_5110","x_6714_5110","x_6974_5008","x_6975_5008",
-               #drops from imp package
+               #drop for being highly correlated to existing vars
                'x_6973_5007', 'x_6973_5008', 'x_6975_5007', 'x_6977_5007', 'x_6978_5007', 'x_6979_5007', 'x_6982_5007', 'x_6982_5008' 
                )
-
 df3 <- df2[ ,!(names(df2) %in% drop_vars)]
 
 #drop countries based on missing data evaluation
@@ -78,80 +87,65 @@ drop_countries <- c("Gibraltar","Macao SAR, China", "Monaco","Montenegro","Serbi
                     "Hong Kong SAR, China")
 df4 <- subset(df3, !(countryname %in% drop_countries))
 
-
-#Start by imputing variables found important in initial DataRobot pass
-#pop, gdp, x_6978_5008, x_6979_5008, x_6796_723011, x_6601_5110, x_6602_5110, x_6620_5110, x_6621_5110,
-#x_6650_5110, x_6655_5110
-
-#build_ratio <- function(input_data,var,country) {
-#  df <- input_data[ ,names(input_data) %in% c(var,"Country.Code")]
-#  data <- subset(df,Country.Code == country)
-#  data$lag1 <- c(data[-1, 2], NA)
-#  data$fratio <- data[ ,2]/data$lag1
-#  data$lag2 <- c(data[+1, 2], NA)
-#  data$rratio <- data[ ,2]/data$lag2
-#  #average by country
-#  ratios <- data %>% dplyr::group_by(Country.Code) %>% summarize(avg_fratio=mean(fratio, na.rm=T),avg_rratio=mean(rratio, na.rm=T))
-#  return(ratios)
-#}
-
-#input_data <- df4
-#impute <- function(input_data,ratio,country) {
-#  data <- input_data[ , names(input_data) %in% c(var,"Country.Code","yr")]
-#  data2 <- merge(data,gdp_ratio,by="Country.Code")
-#  subset <- subset(data2, Country.Code == "AFG")
-#  subset$lag <- c(subset[-1, 3], NA)
-#  subset$lag <- c(subset[+1, 3], NA)
-#}
-
-#for (c in countries) {
-#  miss_by_country <- rbind(miss_by_country,by_country(df,c))
-#}
-
-#gdp_ratio <- build_ratio(df4,"gdp")
-
-#check for highly correlated variables (causing issues with imp package)
+#check for highly correlated variables 
 df5 <- df4[complete.cases(df4), ]
 nums <- unlist(lapply(df5, is.numeric))  
 df6 <- df5[ , nums]
-library(caret)
 fi1 = cor(df6)
-hc = findCorrelation(fi1, cutoff=0.4) # putt any value as a "cutoff" 
+hc = findCorrelation(fi1, cutoff=0.4) # put any value as a "cutoff" 
 hc = sort(hc)
 reduced_Data = df6[,-c(hc)]
 
-#keep_names <- names(reduced_Data)
-#keep_names <- c(keep_names,"countryname","Area","IncomeGroup","Country.Code")
+#create a dataframe of just the numeric variables
 time <- df4[ ,nums]
+
+#create an empty dataframe with the numeric variables and identifier variables
 keep_names <- c(colnames(time),"countryname","yr")
 new <- df4[ ,names(df4) %in% keep_names]
 new <- new[FALSE, ]
-library(imputeTS)
+
+#Save off the categorical/character variables for later
 char <- df4[ , names(df4) %in% c("countryname","Area","IncomeGroup","Country.Code","yr","Sub.Regions","Commodity.driven.deforestation","Forestry","Wildfire","Shifting.agriculture")]
+
+#save an updated country list
 countries <- as.character(unique(df4$countryname)) #210
+
+#IMPUTATION
+#imputation was done by country by variable, so we start by iterating through the countries
 for (c in countries) {
+  #subset data to a single country
   bc <- subset(df4, countryname==c)
+  #drop off some extraneous variables
   bc <- bc[ , !(names(bc) %in% c("Area"))]
+  #subset categorical/character only data down to country with only identifier variables
   build <- subset(char,countryname==c)
   build <- build[ ,names(build) %in% c("countryname","yr")]
+  #iterate through the columns
   for (i in 4:ncol(bc)) {
+    #only impute when we have missing data and at least 7 years of data
     if (sum(is.na(bc[ ,i])) < 20 & sum(is.na(bc[ ,i])) > 0) {
+      #impute using a moving average
       n <- bc[ ,i]
       b <- na_ma(n,weighting="linear")
       dfc <- as.data.frame(b)
+      #apply the variable name to the imputations
       names(dfc)[1] <- names(bc)[i]
+      #bind to the subset identifiers
       build <- cbind(build,dfc)
     } else {
+     #if we aren't imputing (either due to too much missing data or no missing data)
+     #bind to the subset identifiers
      dfc <- as.data.frame(bc[ ,i])
      names(dfc)[1] <- names(bc)[i]
      build <- cbind(build,dfc)
    }
-    #new <- build[FALSE, ]
   }
+  #add to the empty dataset
   new <- rbind(new,build)
 }
 
-#create some new features
+#create some new features that group countries
+#group based on data availability
 new$datagroup <- ifelse(new$countryname %in% c('Rusian Federation','Brazil', 'Canada', 'United States','China','Congo, Dem. Rep.',
                                                'Australia', 'Indonesia', 'Peru', 'India',  'Mexico',
                                                'Columbia',
@@ -313,6 +307,7 @@ new$datagroup <- ifelse(new$countryname %in% c('Rusian Federation','Brazil', 'Ca
                                          'Virgin Islands (U.S.)',
                                          'Yemen, Rep.'),2,3))
 
+#data based on pct forest area
 new$forestgroup <- ifelse(new$countryname %in% c('Suriname','Belgium',
                                                  'Micronesia, Fed. Sts.',
                                                  'Palau',
@@ -482,6 +477,7 @@ new$forestgroup <- ifelse(new$countryname %in% c('Suriname','Belgium',
                                           'Oman',
                                           'Qatar'),3,4)))
 
+#data based on gdp
 new$gdpgroup <- ifelse(new$countryname %in% c('United States',
                                               'Japan',
                                               'Germany',
@@ -634,6 +630,7 @@ new$gdpgroup <- ifelse(new$countryname %in% c('United States',
                                           'Tonga',
                                           'Palau'),3,4)))
 
+#data based on population
 new$popgroup <- ifelse(new$countryname %in% c('China',
                                               'India',
                                               'United States',
@@ -805,14 +802,20 @@ new$popgroup <- ifelse(new$countryname %in% c('China',
                                                                                                    'Palau'),3,4)))
 
 
+#merge the imputations back with the categorical/charcter data
 output <- merge(new,char,by=c("countryname","yr"))
 
+#drop some stragglers we picked up
 oth <- c("x_6646_5110","x_6646_72151","IncomeGroup.y","yrc.x.1","Year.y.1","Sub.Regions.y","Commodity.driven.deforestation.y","Forestry.y","Wildfire.y","Shifting.agriculture.y")
 output2 <- output[ ,!(names(output) %in% oth)]
+#output
 write.csv(output2,"./Data/country_pred_data_v2.csv")
 
+#BUILD DELTA TARGET
+#read in current dataset
 updated <- read.csv("./Data/country_pred_data_v2.csv")
 #build our delta dataset
+#subset to variables that are being lagged
 forlag <- updated[ ,names(updated) %in% c("Country.Code","yr","forest_area","gdp","pop",'x_257_5910',
                                           'x_236_5910',
                                           'x_2071_5910',
@@ -831,9 +834,11 @@ forlag <- updated[ ,names(updated) %in% c("Country.Code","yr","forest_area","gdp
                                           'x_6610_5110',
                                           'x_6716_5110',
                                           'x_6717_5110')]
+#lag data
 forlag2 <- subset(forlag,yr<2016)  
 forlag2$yr <- forlag2$yr+1
 
+#rename lagged columns
 colnames(forlag2)[2] <- "lag_gdp"
 colnames(forlag2)[3] <- "lag_pop"
 colnames(forlag2)[4] <- "lag_forest_area"
@@ -856,7 +861,9 @@ colnames(forlag2)[7] <- 'lag_x_6610_5110'
 colnames(forlag2)[8] <- 'lag_x_6716_5110'
 colnames(forlag2)[9] <- 'lag_x_6717_5110'
 
+#merge lagged data onto original data
 output3 <- merge(updated,forlag2,by=c("Country.Code","yr"))
+#calculate percent change
 output3$delta_gdp<-ifelse(output3$lag_gdp==0 | is.na(output3$lag_gdp),0,(output3$gdp-output3$lag_gdp)/output3$lag_gdp)
 output3$delta_forest_area<-ifelse(output3$lag_forest_area==0 | is.na(output3$lag_forest_area),0,(output3$forest_area-output3$lag_forest_area)/output3$lag_forest_area)
 output3$delta_pop<-ifelse(output3$lag_pop==0 | is.na(output3$lag_pop),0,(output3$pop-output3$lag_pop)/output3$lag_pop)

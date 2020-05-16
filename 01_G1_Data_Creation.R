@@ -1,6 +1,11 @@
-#This files turns and merges all the data sources
+header = '
+MSDS 498
+Spring 2020
+Team 55 - Forest Tracker
 
-#final product has one row per country per year from 1990 to 2016
+Purpose: The purposed of this program was to turn (wide to long, or long to wide to long) and then
+         merge all data sources. The final product has one row per country per year from 1990 to 2016.
+'
 
 #set working directory
 setwd("~/Documents/MSDS498/CapstoneTeam55")
@@ -10,11 +15,11 @@ library(dplyr)
 library(tidyr)
 library(plyr)
 
-#read in forest area data to identify data window
+#read in pct forest area data to identify data window
 forest_area <- read.csv('../ForecastData/API_AG.LND.FRST.ZS_DS2_en_csv_v2_935916.csv',skip=4)
 summary(forest_area)
 
-#subset out non-country rows
+#subset out non-country subtotal rows
 forest_area <- subset(forest_area,!(Country.Name %in% c("Arab World","Caribbean small states","Central Europe and the Baltics",
                                                         "East Asia & Pacific","East Asia & Pacific (excluding high income)","Euro Area",
                                                         "Europe & Central Asia","Europe & Central Asia (excluding high income)","European Union",
@@ -29,41 +34,43 @@ forest_area <- subset(forest_area,!(Country.Name %in% c("Arab World","Caribbean 
                                                         "Latin America & the Caribbean (IDA & IBRD countries)","Late-demographic dividend","IBRD only","IDA & IBRD total",
                                                         "IDA only","IDA blend","IDA total","Europe & Central Asia (IDA & IBRD countries)","Euro Area",
                                                         "East Asia & Pacific (IDA & IBRD countries)","Early-demographic dividend","World","Euro area")))
-#table(forest_area$Country.Name)
 
+#read in GDP
 gdp <- read.csv('../ForecastData/API_NY.GDP.MKTP.CD_DS2_en_csv_v2_988718.csv',skip=4)
 summary(gdp)
-#miminal missing data: max is 43 NAs in 1990
 
+#read in population
 pop <- read.csv('../ForecastData/API_SP.POP.TOTL_DS2_en_csv_v2_988606.csv',skip=4)
 summary(pop)
-#minimal missing data
 
+#read in forest area
 area <- read.csv('../ForecastData/API_AG.LND.FRST.K2_DS2_en_csv_v2_989381.csv',skip=4)
 summary(area)
 
+#read in burning biomass
 burn_bio <- read.csv('../ForecastData/Emissions_Land_Use_Burning_Biomass_E_All_data_NOFLAG.csv')
 summary(burn_bio)
-#averaging about 1000 NAs per year
 
+#read in land cover
 land_cover <- read.csv('../ForecastData/Environment_LandCover_E_All_data_NOFLAG.csv')
 summary(land_cover)
-#only starts in 1992, about 500 missings (we should assess missing data by category; currently multi-row per country)
 
+#read in land use
 landuse <- read.csv('../ForecastData/Inputs_LandUse_E_All_data_NOFLAG.csv')
 summary(landuse)
-#averaging about 3500 missings in early years, decreases closer to the present (we should assess missing data by category; currently multi-row per country)
 
+#read in crop data
 crop_raw <- read.csv('../ForecastData/Trade_Crops_Livestock_E_All_Data_NOFLAG.csv')
 #subset down to export, soybeans, bovine meat, oil, palm palm kernal, oil, soybean
 crop <- subset(crop_raw, Element.Code==5910 & Item.Code %in% c(236, 2071, 257, 258, 237))
 
+#read in forest related exports
 fexport_raw <- read.csv('../ForecastData/Forestry_E_All_Data_NOFLAG.csv')
 #subset down to Production, sawlogs, other industrial roundtree,pulpwood, and sawnwood
 fexport <- subset(fexport_raw, Element.Code==5516 & Item.Code %in% c(1601,1602,1603,1604,1623,1626,1634,1633))
 
-#start by turning forest area: this is the target and we need to match the rest of the data
-#to this
+#start by turning pct forest area: this is the target and we need to 
+#match the rest of the data to this
 forest_long <- gather(forest_area, Year, pct_forest, X1990:X2016, factor_key=TRUE)
 col_subset <- c("Country.Code","Country.Name","Year","pct_forest")
 #remove extra columns
@@ -85,7 +92,7 @@ pop_long2 <- pop_long[,names(pop_long) %in% col_subset]
 pop_long2$yrc <- lapply(pop_long2$Year, as.character)
 pop_long2$yr <- as.numeric(substr(pop_long2$yrc,2,5))
 
-#arealong
+#Forest area also follows this pattern
 area_long <- gather(area, Year, forest_area, X1990:X2016, factor_key = TRUE)
 col_subset <- c("Country.Code","Year","forest_area")
 area_long2 <- area_long[ ,names(area_long) %in% col_subset]
@@ -116,6 +123,7 @@ make_dict <- function(data) {
   return(dedup)
 }
 
+#start with burning biomass
 fin_burn_bio <- make_useable(burn_bio)
 burn_bio_dict <- make_dict(burn_bio)
 
@@ -130,16 +138,21 @@ col_order <- c("Area.Code"  ,  "Area"    ,     "Item.Code"   , "Item"     ,    "
                "Y2009"      ,  "Y2010"    ,    "Y2011"    ,    "Y2012"   ,     "Y2013"   ,     "Y2014" ,      
                "Y2015"    ,    "Y2016"    ,    "Y2017")
 land_cover <- land_cover[ , col_order]
+#turn the land cover data and make dictionary
 fin_land_cover <- make_useable(land_cover)
 land_cover_dict <- make_dict(land_cover)
+#turn the land use data and make dictionary
 fin_land_use <- make_useable(landuse)
 land_use_dict <- make_dict(landuse)
+#turn the crop data and make dictionary
 fin_crop <- make_useable(crop)
 crop_dict <- make_dict(crop)
+#turn the export data and make dictionary
 fin_export <- make_useable(fexport)
 export_dict <- make_dict(fexport)
 
 #Now we have to start merging
+#keeping track of the number of records before and after merge
 
 #target and gdp (5886 & 7128 obs)
 step1 <- merge(forest_long2,gdp_long2, by=c("Country.Code","yr")) #5886
@@ -223,12 +236,12 @@ step4 <- merge (step3,side3, by=c("countryname","yr"))
 only_step3 <- anti_join(step3,side3,by=c("countryname","yr")) #we'll save this
 only_side3 <- anti_join(side3,step3,by=c("countryname","yr"))
 
-#full dict
+#Stack the data dictionaries together
 full_dict <- rbind(burn_bio_dict,land_use_dict,land_cover_dict,crop_dict,export_dict)
 
 #output all our data
 out4 <- apply(step4,2,as.character)
-write.csv(out4, file="country_pred_data.csv")
-write.csv(only_step3, file="extra_targets.csv")
-write.csv(full_dict, file="Data_dictionary.csv")
+write.csv(out4, file="country_pred_data.csv") #model data
+write.csv(only_step3, file="extra_targets.csv") #some extra countries
+write.csv(full_dict, file="Data_dictionary.csv") #data dictionary
 
