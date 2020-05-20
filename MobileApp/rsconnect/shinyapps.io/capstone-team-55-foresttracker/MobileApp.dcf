@@ -1,0 +1,12 @@
+name: MobileApp
+title: MobileApp
+username:
+account: capstone-team-55-foresttracker
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2314339
+bundleId: 3158812
+url: https://capstone-team-55-foresttracker.shinyapps.io/MobileApp/
+when: 1589743996.5691
+asMultiple: FALSE
+asStatic: FALSE
