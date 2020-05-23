@@ -66,11 +66,11 @@ df_fm <- df[,!(names(df) %in% c("X","delta_forest_area"))]
 known <- df[,names(df) %in% c("countryname","yr","delta_forest_area")]
 known2 <- subset(known,yr<2017)
 
-pred17 <- read.csv("./Data/Predictive_model_Predictions_Predictive_model_Data_Pred_Noadj_(19)_2017.csv")
-pred18 <- read.csv("./Data/Predictive_model_Predictions_Predictive_model_Data_Pred_Noadj_(19)_2018.csv")
-pred19 <- read.csv("./Data/Predictive_model_Predictions_Predictive_model_Data_Pred_Noadj_(19)_2019.csv")
-pred20 <- read.csv("./Data/Predictive_model_Predictions_Predictive_model_Data_Pred_Noadj_(19)_2020.csv")
-pred21 <- read.csv("./Data/Predictive_model_Predictions_Predictive_model_Data_Pred_Noadj_(19)_2021.csv")
+pred17 <- read.csv("./Data/Predictive_model_Predictions_Predictive_model_Data_Pred_adj_(3)_2017.csv")
+pred18 <- read.csv("./Data/Predictive_model_Predictions_Predictive_model_Data_Pred_adj_(3)_2018.csv")
+pred19 <- read.csv("./Data/Predictive_model_Predictions_Predictive_model_Data_Pred_adj_(3)_2019.csv")
+pred20 <- read.csv("./Data/Predictive_model_Predictions_Predictive_model_Data_Pred_adj_(3)_2020.csv")
+pred21 <- read.csv("./Data/Predictive_model_Predictions_Predictive_model_Data_Pred_adj_(3)_2021.csv")
 
 #stack predictions
 pred <- rbind(pred17,pred18,pred19,pred20,pred21)
