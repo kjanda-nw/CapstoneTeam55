@@ -18,7 +18,7 @@ library(tidyverse)
 df <- read.csv("./Data/country_pred_delta_forest.csv")
 
 #save some columns to merge on at the end
-sfl <- c("countryname","yr","Country.Code","Sub.Regions.x","Income.Group.x")
+sfl <- c("countryname","yr","Country.Code","Sub.Regions.x","IncomeGroup.x")
 sfldf <- df[,names(df) %in% sfl]
 
 sfldf <- subset(sfldf,yr==2016)

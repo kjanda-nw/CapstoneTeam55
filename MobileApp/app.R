@@ -11,16 +11,27 @@ TUTORIAL: https://deanattali.com/blog/building-shiny-apps-tutorial/
 '
 #import libraries
 library(shiny)
+library(DT)
 library(ggplot2)
 library(dplyr)
 library(tidyverse)
 library(reshape2)
 
 #load the data
-ind <- read.csv("country_pred_delta_forest.csv", stringsAsFactors = FALSE)
+ind <- read.csv("Combined_1991_2021_Adj.csv", stringsAsFactors = FALSE)
 
 #start with a simple dataset
 ftd <- ind[ ,names(ind) %in% c("countryname","yr","forest_area")]
+
+#build a datatable with the images
+preds <- read.csv("images.csv")
+images <- c('<img src="img/test_0.jpg" height="52"></img>','<img src="img/test_1.jpg" height="52"></img>',
+            '<img src="img/test_2.jpg" height="52"></img>','<img src="img/test_3.jpg" height="52"></img>',
+            '<img src="img/test_4.jpg" height="52"></img>','<img src="img/test_5.jpg" height="52"></img>',
+            '<img src="img/test_6.jpg" height="52"></img>','<img src="img/test_7.jpg" height="52"></img>',
+            '<img src="img/test_8.jpg" height="52"></img>','<img src="img/test_9.jpg" height="52"></img>',
+            '<img src="img/test_10.jpg" height="52"></img>')
+tt <- cbind(preds,images)
 
 #ui setup
 ui <- fluidPage(
@@ -30,13 +41,15 @@ ui <- fluidPage(
   br(),
   sidebarLayout(
     sidebarPanel(
-    sliderInput("yrInput","Year",1991,2016,value=c(2011,2016),sep=""), #update with predictions
+    sliderInput("yrInput","Year",1991,2021,value=c(2011,2021),sep=""), #update with predictions
     uiOutput("countryOutput")
     ),
     mainPanel(
-      plotOutput("areaplot"),
-      br(), br(),
-      tableOutput("results")
+      tabsetPanel(type="tabs",
+                  tabPanel("Plot",plotOutput("areaplot")),
+                  tabPanel("Table",tableOutput("results")),
+                  tabPanel("Images",DT::dataTableOutput("images"))
+      )
     )
   )
 )
@@ -60,6 +73,15 @@ server <- function(input, output) {
       ) 
     
   })
+  ifiltered <- reactive ({
+    if (is.null(input$countryInput)) {
+      return(NULL)
+    }
+    
+    tt %>%
+      filter(Country %in% input$countryInput) %>%
+      arrange(desc(Deforestation_prob))
+  })
   
   output$areaplot <- renderPlot({
     if (is.null(filtered())) {
@@ -73,6 +95,10 @@ server <- function(input, output) {
   
   output$results <- renderTable({
     filtered()
+  })
+  
+  output$images <- DT::renderDataTable({
+    DT::datatable(ifiltered(),escape = FALSE)
   })
 }
 
