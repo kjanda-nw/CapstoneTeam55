@@ -21,7 +21,7 @@ library(reshape2)
 ind <- read.csv("Combined_1991_2021_Adj.csv", stringsAsFactors = FALSE)
 
 #start with a simple dataset
-ftd <- ind[ ,names(ind) %in% c("countryname","yr","forest_area")]
+ftd <- ind[ ,names(ind) %in% c("countryname","yr","forest_change")]
 
 #build a datatable with the images
 preds <- read.csv("images.csv")
@@ -88,8 +88,8 @@ server <- function(input, output) {
       return()
     }
     ggplot(filtered()) +
-      geom_line(mapping = aes(x=yr, y=forest_area, colour=countryname)) +
-      labs(x="Year", y="Forest area (sq. km)", title="Forest area") +
+      geom_line(mapping = aes(x=yr, y=forest_change, colour=countryname)) +
+      labs(x="Year", y="Change Forest Area (sq. km)", title="Forest area") +
       scale_colour_discrete(name="Country")
   })
   

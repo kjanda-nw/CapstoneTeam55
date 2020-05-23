@@ -7,3 +7,4 @@ images <- c('<img src="./www/test_0.jpg" height="52"></img>','<img src="./www/te
             '<img src="./www/test_10.jpg" height="52"></img>')
 tt <- cbind(preds,images)
 
+ind <- read.csv("Combined_1991_2021_Adj.csv", stringsAsFactors = FALSE)
