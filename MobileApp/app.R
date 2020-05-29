@@ -21,17 +21,26 @@ library(reshape2)
 ind <- read.csv("Combined_1991_2021_Adj.csv", stringsAsFactors = FALSE)
 
 #start with a simple dataset
-ftd <- ind[ ,names(ind) %in% c("countryname","yr","forest_change")]
+ftd <- melt(ind, id.vars = c("yr","countryname","Sub.Regions","IncomeGroup","Country.Code"))
 
 #build a datatable with the images
-preds <- read.csv("images.csv")
-images <- c('<img src="img/test_0.jpg" height="52"></img>','<img src="img/test_1.jpg" height="52"></img>',
-            '<img src="img/test_2.jpg" height="52"></img>','<img src="img/test_3.jpg" height="52"></img>',
-            '<img src="img/test_4.jpg" height="52"></img>','<img src="img/test_5.jpg" height="52"></img>',
-            '<img src="img/test_6.jpg" height="52"></img>','<img src="img/test_7.jpg" height="52"></img>',
-            '<img src="img/test_8.jpg" height="52"></img>','<img src="img/test_9.jpg" height="52"></img>',
-            '<img src="img/test_10.jpg" height="52"></img>')
-tt <- cbind(preds,images)
+is <- read.csv("images.csv")
+
+tt <- is[, names(is) %in% c("Image_Number","Image","pr_slash_burn","pr_selective_logging","CountryName","Sub.Regions")]
+
+vars <- c("GDP"='gdp',"Prior Year Population"='lag_pop',"Prior Year Burned Area"='lag_x_6798_7246',
+          "Prior Year Soybean Oil Export"='lag_x_237_5910',"Prior Year Palm Oil Export"='lag_x_257_5910',
+          "Prior Year Production of Pulpwood"='lag_x_1603_5516',
+          "Prior Year Production of Saw and Veneer Logs"='lag_x_1604_5516',
+          "Prior Year Production of Other Industrial Roundwood"='lag_x_1626_5516',
+          "Prior Year Production of Sawnwood"='lag_x_1633_5516',
+          "Prior Year Production of Veneer Sheets"='lag_x_1634_5516')
+fvars <- c("Forest Area (sq. km)"='forest_area',"Prior Year Forest Area (sq. km)"='lag_forest_area',
+           "Percent Change in Forest Area"='delta_forest_area',"Change in Forest Area (sq. km)"='forest_change',
+           "Absolute Change in Forest Area (sq. km)"='abs_forest_change')
+
+countries <- ind[,names(ind) %in% c("countryname","Sub.Regions")]
+countries2 <- unique(countries)
 
 #ui setup
 ui <- fluidPage(
@@ -42,54 +51,96 @@ ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
     sliderInput("yrInput","Year",1991,2021,value=c(2011,2021),sep=""), #update with predictions
-    uiOutput("countryOutput")
+    selectizeInput("fplot_var", "Forest Variable", choices = fvars, selected="forest_area"),
+    selectizeInput("plot_var", "Predictor Variable",choices = vars),
+    selectInput("countryInput","Country",
+                choice=split(countries2$countryname,countries2$Sub.Regions),
+                selected = "Brazil", multiple = TRUE)
     ),
     mainPanel(
       tabsetPanel(type="tabs",
-                  tabPanel("Plot",plotOutput("areaplot")),
-                  tabPanel("Table",tableOutput("results")),
-                  tabPanel("Images",DT::dataTableOutput("images"))
+                  tabPanel("Images",DT::dataTableOutput("images")),
+                  tabPanel("Plot",
+                           plotOutput("areaplot"),
+                           plotOutput("predplot")
+                  ),
+                  tabPanel("Table",tableOutput("results"))
       )
     )
   )
 )
 #server setup
 server <- function(input, output) {
-  output$countryOutput <- renderUI({
-    selectInput("countryInput","Country",
-                sort(unique(ftd$countryname)),
-                selected = "Brazil", multiple = TRUE)
-  })
+  #output$countryOutput <- renderUI({
+  #  selectInput("countryInput","Country",
+  #              choice=split(countries2$Sub.Regions,countries2$countryname),
+  #              selected = "Brazil", multiple = TRUE)
+  #})
   
   filtered <- reactive ({
     if (is.null(input$countryInput)) {
       return(NULL)
     }
     
-    ftd %>% 
+    ind %>% 
       filter(yr >= input$yrInput[1],
              yr <= input$yrInput[2],
              countryname %in% input$countryInput
-      ) 
+      ) %>% subset(select=c('yr','countryname',input$fplot_var,input$plot_var))
     
   })
+  plotdata<- reactive ({
+    if (is.null(input$countryInput)) {
+      return(NULL)
+    }
+    var = input$plot_var
+    ftd %>% 
+      filter(yr >= input$yrInput[1],
+             yr <= input$yrInput[2],
+             countryname %in% input$countryInput,
+             variable == var
+      )
+  })
+  fplotdata <- reactive ({
+    if (is.null(input$countryInput)) {
+      return(NULL)
+    }
+    var = input$fplot_var
+    ftd %>% 
+      filter(yr >= input$yrInput[1],
+             yr <= input$yrInput[2],
+             countryname %in% input$countryInput,
+             variable == var
+      )
+    
+  })
+  
   ifiltered <- reactive ({
     if (is.null(input$countryInput)) {
       return(NULL)
     }
     
     tt %>%
-      filter(Country %in% input$countryInput) %>%
-      arrange(desc(Deforestation_prob))
+      filter(CountryName %in% input$countryInput) %>%
+      arrange(desc(pr_selective_logging))
   })
   
   output$areaplot <- renderPlot({
-    if (is.null(filtered())) {
+    if (is.null(fplotdata())) {
       return()
     }
-    ggplot(filtered()) +
-      geom_line(mapping = aes(x=yr, y=forest_change, colour=countryname)) +
-      labs(x="Year", y="Change Forest Area (sq. km)", title="Forest area") +
+    ggplot(fplotdata()) +
+      geom_line(mapping = aes(x=yr, y=value, colour=countryname)) +
+      labs(x="Year", title=input$fplot_var) +
+      scale_colour_discrete(name="Country")
+  })
+  output$predplot <- renderPlot({
+    if (is.null(plotdata())) {
+      return()
+    }
+    ggplot(plotdata(), aes(x=yr, y=value, colour=countryname)) +
+      geom_line() +
+      labs(x="Year", title=input$plot_var) +
       scale_colour_discrete(name="Country")
   })
   
