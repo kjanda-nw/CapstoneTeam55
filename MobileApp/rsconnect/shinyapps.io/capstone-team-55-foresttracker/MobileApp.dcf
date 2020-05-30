@@ -5,9 +5,9 @@ account: capstone-team-55-foresttracker
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 2314339
-bundleId: 3203150
+bundleId: 3208786
 url: https://capstone-team-55-foresttracker.shinyapps.io/MobileApp/
-when: 1590721194.41701
+when: 1590871018.84186
 asMultiple: FALSE
 asStatic: FALSE
 ignoredFiles: Combined_1991_2021_noAdj.csv|country_pred_delta_forest.csv|test.R
